@@ -1,4 +1,4 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "skills": ["caveman"]
+  "instructions": [".agents/skills/caveman/SKILL.md"]
 }
