@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import plants, auth, cart, orders, blog, reviews, newsletter, cards
+from app.routers import plants, auth, cart, orders, blog, reviews, newsletter, cards, addresses
 
 app = FastAPI(title="Planto API", version="1.0.0")
 
@@ -21,6 +21,7 @@ app.include_router(blog.router, prefix="/api/blog", tags=["Blog"])
 app.include_router(reviews.router, prefix="/api/reviews", tags=["Reviews"])
 app.include_router(newsletter.router, prefix="/api/newsletter", tags=["Newsletter"])
 app.include_router(cards.router, prefix="/api/cards", tags=["Cards"])
+app.include_router(addresses.router, prefix="/api/addresses", tags=["Addresses"])
 
 
 @app.get("/api/health")

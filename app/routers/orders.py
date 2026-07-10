@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.data import create_order, get_cart_items, get_user_orders
+from app.data import create_order, get_cart_items, get_user_orders, get_address_by_id
 from app.dependencies import get_current_user
 from app.db_models import SavedCard
 from app.email_service import send_order_confirmation_email
@@ -40,6 +40,13 @@ def place_order(
                 detail="Pago rechazado",
             )
 
+    address = get_address_by_id(db, body.address_id, current_user.id)
+    if not address:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Address not found",
+        )
+
     cart_items = get_cart_items(db, current_user.id)
     if not cart_items:
         raise HTTPException(
@@ -47,7 +54,7 @@ def place_order(
             detail="Cart is empty",
         )
 
-    order = create_order(db, current_user.id)
+    order = create_order(db, current_user.id, body.address_id)
 
     items_data = [
         {"plant_name": oi.plant_name, "quantity": oi.quantity}
@@ -77,6 +84,13 @@ def place_order(
             for oi in order.items
         ],
         created_at=order.created_at.isoformat(),
+        address_street=order.address_street,
+        address_number=order.address_number,
+        address_colony=order.address_colony,
+        address_city=order.address_city,
+        address_state=order.address_state,
+        address_zip_code=order.address_zip_code,
+        address_country=order.address_country,
     )
 
 
@@ -103,6 +117,13 @@ def list_orders(
                 for oi in o.items
             ],
             created_at=o.created_at.isoformat(),
+            address_street=o.address_street,
+            address_number=o.address_number,
+            address_colony=o.address_colony,
+            address_city=o.address_city,
+            address_state=o.address_state,
+            address_zip_code=o.address_zip_code,
+            address_country=o.address_country,
         )
         for o in orders
     ]

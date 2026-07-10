@@ -19,6 +19,7 @@ class User(Base):
     cart_items: Mapped[list["CartItem"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     orders: Mapped[list["Order"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     saved_cards: Mapped[list["SavedCard"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    addresses: Mapped[list["Address"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class ResetToken(Base):
@@ -98,6 +99,27 @@ class CartItem(Base):
     plant: Mapped["Plant"] = relationship(back_populates="cart_items")
 
 
+class Address(Base):
+    __tablename__ = "addresses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    label: Mapped[str] = mapped_column(String(50), nullable=False)
+    street: Mapped[str] = mapped_column(String(255), nullable=False)
+    number: Mapped[str] = mapped_column(String(20), nullable=False)
+    colony: Mapped[str] = mapped_column(String(255), nullable=False)
+    city: Mapped[str] = mapped_column(String(255), nullable=False)
+    state: Mapped[str] = mapped_column(String(255), nullable=False)
+    zip_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    country: Mapped[str] = mapped_column(String(100), nullable=False)
+    reference: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    user: Mapped["User"] = relationship(back_populates="addresses")
+    orders: Mapped[list["Order"]] = relationship(back_populates="address")
+
+
 class Order(Base):
     __tablename__ = "orders"
 
@@ -105,10 +127,19 @@ class Order(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     status: Mapped[str] = mapped_column(String(50), default="confirmed")
     total: Mapped[float] = mapped_column(Float, nullable=False)
+    address_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("addresses.id"), nullable=True)
+    address_street: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    address_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    address_colony: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    address_city: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    address_state: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    address_zip_code: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    address_country: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user: Mapped["User"] = relationship(back_populates="orders")
     items: Mapped[list["OrderItem"]] = relationship(back_populates="order", cascade="all, delete-orphan")
+    address: Mapped[Optional["Address"]] = relationship(back_populates="orders")
 
 
 class NewsletterSubscriber(Base):

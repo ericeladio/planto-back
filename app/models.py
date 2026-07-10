@@ -74,11 +74,20 @@ class CartUpdateRequest(BaseModel):
 
 
 class OrderOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     status: str
     total: float
     items: list[CartItemOut]
     created_at: str
+    address_street: Optional[str] = None
+    address_number: Optional[str] = None
+    address_colony: Optional[str] = None
+    address_city: Optional[str] = None
+    address_state: Optional[str] = None
+    address_zip_code: Optional[str] = None
+    address_country: Optional[str] = None
 
 
 class BlogPostOut(BaseModel):
@@ -143,6 +152,48 @@ class PayWithSavedCardRequest(BaseModel):
     cvv: str = Field(..., min_length=3, max_length=3)
 
 
+class AddressCreate(BaseModel):
+    label: str = Field(..., min_length=1, max_length=50)
+    street: str = Field(..., min_length=1, max_length=255)
+    number: str = Field(..., min_length=1, max_length=20)
+    colony: str = Field(..., min_length=1, max_length=255)
+    city: str = Field(..., min_length=1, max_length=255)
+    state: str = Field(..., min_length=1, max_length=255)
+    zip_code: str = Field(..., min_length=1, max_length=10)
+    country: str = Field(..., min_length=1, max_length=100)
+    reference: Optional[str] = Field(None, max_length=500)
+    is_default: bool = False
+
+
+class AddressUpdate(BaseModel):
+    label: Optional[str] = Field(None, min_length=1, max_length=50)
+    street: Optional[str] = Field(None, min_length=1, max_length=255)
+    number: Optional[str] = Field(None, min_length=1, max_length=20)
+    colony: Optional[str] = Field(None, min_length=1, max_length=255)
+    city: Optional[str] = Field(None, min_length=1, max_length=255)
+    state: Optional[str] = Field(None, min_length=1, max_length=255)
+    zip_code: Optional[str] = Field(None, min_length=1, max_length=10)
+    country: Optional[str] = Field(None, min_length=1, max_length=100)
+    reference: Optional[str] = Field(None, max_length=500)
+    is_default: Optional[bool] = None
+
+
+class AddressOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    label: str
+    street: str
+    number: str
+    colony: str
+    city: str
+    state: str
+    zip_code: str
+    country: str
+    reference: Optional[str] = None
+    is_default: bool
+
+
 class PlaceOrderRequest(BaseModel):
     type: Literal["new", "saved"]
     card_number: Optional[str] = Field(None, min_length=16, max_length=16)
@@ -150,6 +201,7 @@ class PlaceOrderRequest(BaseModel):
     exp_year: Optional[int] = Field(None, ge=2025)
     cvv: str = Field(..., min_length=3, max_length=3)
     card_id: Optional[int] = None
+    address_id: int
 
     @model_validator(mode="after")
     def validate_fields(self):

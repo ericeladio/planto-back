@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db_models import (
+    Address,
     CartItem,
     Order,
     OrderItem,
@@ -198,14 +199,116 @@ def clear_cart(db: Session, user_id: int) -> None:
     db.commit()
 
 
+# ─── ADDRESSES ────────────────────────────────────────────────────────────────
+
+
+def get_user_addresses(db: Session, user_id: int):
+    return db.query(Address).filter(Address.user_id == user_id).order_by(Address.is_default.desc(), Address.created_at.desc()).all()
+
+
+def get_address_by_id(db: Session, address_id: int, user_id: int) -> Optional[Address]:
+    return db.query(Address).filter(Address.id == address_id, Address.user_id == user_id).first()
+
+
+def create_address(
+    db: Session,
+    user_id: int,
+    label: str,
+    street: str,
+    number: str,
+    colony: str,
+    city: str,
+    state: str,
+    zip_code: str,
+    country: str,
+    reference: Optional[str] = None,
+    is_default: bool = False,
+) -> Address:
+    if is_default:
+        db.query(Address).filter(Address.user_id == user_id, Address.is_default == True).update({"is_default": False})
+
+    addr = Address(
+        user_id=user_id,
+        label=label,
+        street=street,
+        number=number,
+        colony=colony,
+        city=city,
+        state=state,
+        zip_code=zip_code,
+        country=country,
+        reference=reference,
+        is_default=is_default,
+    )
+    db.add(addr)
+    db.commit()
+    db.refresh(addr)
+    return addr
+
+
+def update_address(db: Session, address_id: int, user_id: int, **kwargs) -> Optional[Address]:
+    addr = db.query(Address).filter(Address.id == address_id, Address.user_id == user_id).first()
+    if not addr:
+        return None
+
+    if kwargs.get("is_default") == True:
+        db.query(Address).filter(Address.user_id == user_id, Address.is_default == True).update({"is_default": False})
+
+    for key, value in kwargs.items():
+        if value is not None:
+            setattr(addr, key, value)
+
+    db.commit()
+    db.refresh(addr)
+    return addr
+
+
+def delete_address(db: Session, address_id: int, user_id: int) -> bool:
+    addr = db.query(Address).filter(Address.id == address_id, Address.user_id == user_id).first()
+    if not addr:
+        return False
+    db.delete(addr)
+    db.commit()
+    return True
+
+
+def set_default_address(db: Session, address_id: int, user_id: int) -> Optional[Address]:
+    addr = db.query(Address).filter(Address.id == address_id, Address.user_id == user_id).first()
+    if not addr:
+        return None
+
+    db.query(Address).filter(Address.user_id == user_id, Address.is_default == True).update({"is_default": False})
+    addr.is_default = True
+    db.commit()
+    db.refresh(addr)
+    return addr
+
+
+def get_default_address(db: Session, user_id: int) -> Optional[Address]:
+    return db.query(Address).filter(Address.user_id == user_id, Address.is_default == True).first()
+
+
 # ─── ORDERS ───────────────────────────────────────────────────────────────────
 
 
-def create_order(db: Session, user_id: int) -> Order:
+def create_order(db: Session, user_id: int, address_id: int) -> Order:
     cart_items = get_cart_items(db, user_id)
     total = sum(item.plant.price * item.quantity for item in cart_items)
 
-    order = Order(user_id=user_id, total=total)
+    address = db.query(Address).filter(Address.id == address_id, Address.user_id == user_id).first()
+
+    order = Order(
+        user_id=user_id,
+        total=total,
+        address_id=address_id,
+        address_street=address.street if address else None,
+        address_number=address.number if address else None,
+        address_colony=address.colony if address else None,
+        address_city=address.city if address else None,
+        address_state=address.state if address else None,
+        address_zip_code=address.zip_code if address else None,
+        address_country=address.country if address else None,
+    )
     db.add(order)
     db.flush()
 
