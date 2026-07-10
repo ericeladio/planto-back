@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.database import engine, Base
 from app.routers import plants, auth, cart, orders, blog, reviews, newsletter, cards, addresses
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Planto API", version="1.0.0")
 
